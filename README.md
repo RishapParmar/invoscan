@@ -36,7 +36,6 @@ This project extracts data from invoice documents using Python.
 
 ![Project Screenshot](docs/images/placeholder.png)
 
-*(Replace `docs/images/placeholder.png` with your actual image)*
 
 ## License
 
