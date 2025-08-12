@@ -2,4 +2,5 @@ flask
 python-dotenv
 pydantic
 google-generativeai
+google-genai
 werkzeug
