@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice Extractor Service</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 32px 40px 40px 40px;
+        }
+        h2 {
+            color: #2d3748;
+            margin-bottom: 24px;
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        form {
+            margin-bottom: 24px;
+        }
+        label {
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 8px;
+            display: block;
+        }
+        input[type="file"] {
+            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            background: #f7fafc;
+        }
+        button {
+            background: #3182ce;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .error {
+            color: #e53e3e;
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .side-by-side {
+            display: flex;
+            gap: 48px;
+            margin-top: 24px;
+        }
+        .file-preview, .result {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-preview {
+            background: #f7fafc;
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .file-preview h4 {
+            margin-top: 0;
+            color: #2b6cb0;
+            font-size: 1.1rem;
+        }
+        img {
+            max-width: 900px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-top: 12px;
+            display: block;
+        }
+        iframe {
+            width: 100%;
+            min-width: 600px;
+            height: 800px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            background: #fff;
+            margin-top: 12px;
+        }
+        .result {
+            background: #f0fff4;
+            padding: 24px;
+            border-radius: 10px;
+            border: 1px solid #c6f6d5;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        .result h4 {
+            color: #38a169;
+            margin-top: 0;
+            font-size: 1.15rem;
+        }
+        pre {
+            background: #e6fffa;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #2d3748;
+            overflow-x: auto;
+        }
+        .loader {
+            display: none;
+            margin: 32px auto;
+            text-align: center;
+        }
+        .loader .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3182ce;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        .loader p {
+            color: #3182ce;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 98vw;
+                padding: 16px 8px;
+            }
+            .side-by-side {
+                flex-direction: column;
+                gap: 0;
+            }
+            img, iframe {
+                max-width: 100%;
+                min-width: 0;
+                height: auto;
+            }
+            .result {
+                max-height: none;
+            }
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px 2px;
+            }
+            img, iframe {
+                max-width: 100%;
+                min-width: 0;
+                height: auto;
+            }
+        }
+    </style>
+    <script>
+        // Prevent form resubmission on reload
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+        // Show loader on form submit
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Invoice Information Extractor</h2>
+        <form method="post" enctype="multipart/form-data" onsubmit="showLoader();">
+            <label>Select Invoice File (PDF, PNG, JPEG):</label>
+            <input type="file" name="file" required>
+            <button type="submit">Extract</button>
+        </form>
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <p>Processing file, please wait...</p>
+        </div>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        {% if filename or result %}
+            <div class="side-by-side">
+                {% if filename %}
+                <div class="file-preview">
+                    <h4>Uploaded File Preview:</h4>
+                    {% if filename.lower().endswith('.pdf') %}
+                        <iframe src="{{ url_for('uploaded_file', filename=filename) }}"></iframe>
+                    {% else %}
+                        <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Invoice Image">
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if result %}
+                <div class="result">
+                    <h4>Extracted Invoice Information:</h4>
+                    {% set info = result %}
+                    <div>
+                        <strong>Bill Number:</strong> {{ info.bill_number }}<br>
+                        <strong>Date:</strong> {{ info.date_DDMMYY }}<br>
+                        <hr>
+                        <strong>Vendor Details:</strong>
+                        <ul>
+                            <li><strong>Company Name:</strong> {{ info.vendor.company_name }}</li>
+                            <li><strong>GST Number:</strong> {{ info.vendor.gst_number }}</li>
+                            <li><strong>Address:</strong> {{ info.vendor.address }}</li>
+                            <li><strong>Phone Numbers:</strong>
+                                <ul>
+                                    {% for phone in info.vendor.phone_numbers %}
+                                        <li>{{ phone }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                        <strong>Customer Details:</strong>
+                        <ul>
+                            <li><strong>Name:</strong> {{ info.customer.name }}</li>
+                            <li><strong>Address:</strong> {{ info.customer.address }}</li>
+                            <li><strong>Phone Numbers:</strong>
+                                <ul>
+                                    {% for phone in info.customer.phone_numbers %}
+                                        <li>{{ phone }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                        <strong>Overall Discount:</strong> {{ info.overall_discount }}<br>
+                        <strong>Total Price to Pay:</strong> {{ info.total_price_to_pay }}<br>
+                        <hr>
+                        <strong>Products/Services:</strong>
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:#c6f6d5;">
+                                    <th style="border:1px solid #c6f6d5;padding:6px;">Name</th>
+                                    <th style="border:1px solid #c6f6d5;padding:6px;">Description</th>
+                                    <th style="border:1px solid #c6f6d5;padding:6px;">Final Price</th>
+                                    <th style="border:1px solid #c6f6d5;padding:6px;">Discount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prod in info.product_or_service %}
+                                <tr>
+                                    <td style="border:1px solid #c6f6d5;padding:6px;">{{ prod.name }}</td>
+                                    <td style="border:1px solid #c6f6d5;padding:6px;">{{ prod.description }}</td>
+                                    <td style="border:1px solid #c6f6d5;padding:6px;">{{ prod.final_price }}</td>
+                                    <td style="border:1px solid #c6f6d5;padding:6px;">{{ prod.discount }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    <script>
+        // Hide loader if result or error is present
+        window.onload = function() {
+            var loader = document.getElementById('loader');
+            {% if result or error %}
+                loader.style.display = 'none';
+            {% endif %}
+        }
+    </script>
+</body>
+</html>
